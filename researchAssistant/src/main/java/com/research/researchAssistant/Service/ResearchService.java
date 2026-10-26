@@ -1,8 +1,10 @@
 package com.research.researchAssistant.Service;
 
 import com.research.researchAssistant.Entity.ResearchRequest;
+import com.research.researchAssistant.Response.SummaryResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.reactive.function.client.WebClient;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Map;
 
@@ -16,8 +18,11 @@ public class ResearchService {
 
     private final WebClient webClient;
 
-    public ResearchService(WebClient.Builder webClientBuilder) {
+    private final ObjectMapper objectMapper;
+
+    public ResearchService(WebClient.Builder webClientBuilder, ObjectMapper objectMapper) {
         this.webClient = WebClient.builder().build();
+        this.objectMapper = objectMapper;
     }
 
 
@@ -44,7 +49,16 @@ public class ResearchService {
 
     private String extractTextFromResponse(String response) {
         try{
-
+            SummaryResponse summaryResponse = objectMapper.readValue(response, SummaryResponse.class);
+            if(summaryResponse.getCandidates() != null && !summaryResponse.getCandidates().isEmpty()){
+                SummaryResponse.Candidate firstCandidate = (SummaryResponse.Candidate) summaryResponse.getCandidates();
+                if(firstCandidate.getContent() !=null &&
+                firstCandidate.getContent().getParts() !=null &&
+                !firstCandidate.getContent().getParts().isEmpty()){
+                    return firstCandidate.getContent().getParts().get(0).getText();
+                }
+            }
+            return "No response";
         } catch (Exception e) {
             return "Error Parsing" + e.getMessage();
         }
