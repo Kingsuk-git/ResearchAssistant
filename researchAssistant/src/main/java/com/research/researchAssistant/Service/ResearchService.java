@@ -2,6 +2,9 @@ package com.research.researchAssistant.Service;
 
 import com.research.researchAssistant.Entity.ResearchRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.Map;
 
 public class ResearchService {
 
@@ -11,8 +14,40 @@ public class ResearchService {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-    public String processContent(ResearchRequest request) {
+    private final WebClient webClient;
 
+    public ResearchService(WebClient.Builder webClientBuilder) {
+        this.webClient = WebClient.builder().build();
+    }
+
+
+    public String processContent(ResearchRequest request) {
+        String prompt = buildPrompt(request);
+
+        Map<String,Object> requestBody = Map.of(
+                "content",new Object[]{
+                        Map.of("parts",new Object[]{
+                                Map.of("text",prompt)
+                        })
+                }
+        );
+
+        String response = webClient.post()
+                .uri(geminiApiUrl + geminiApiKey)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        return extractTextFromResponse(response);
+    }
+
+    private String extractTextFromResponse(String response) {
+        try{
+
+        } catch (Exception e) {
+            return "Error Parsing" + e.getMessage();
+        }
     }
 
     private String buildPrompt(ResearchRequest request){
